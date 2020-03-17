@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Redis failover test client
@@ -85,8 +85,8 @@ class TestClient(object):
         responses = 0
         while True:
             try:
-                self.sock.send(self.hb_command)
-                response = self.sock.recv(512)
+                self.sock.send(self.hb_command.encode())
+                response = self.sock.recv(512).decode()
                 if not response:
                     self.log_event('[E] Server connection dropped')
                     break
