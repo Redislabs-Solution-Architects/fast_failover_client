@@ -36,6 +36,14 @@ class TestClient(object):
                               'PING\r\n'
             self.hb_expected_reply = '+PONG\r\n'
 
+        if args.password:
+            self.hb_command = '*2\r\n' \
+                              '$4\r\n' \
+                              'AUTH\r\n' \
+                              '$%d\r\n' \
+                              '%s\r\n' % (len(args.password), args.password) + self.hb_command
+            self.hb_expected_reply = '+OK\r\n' + self.hb_expected_reply
+
         self.sock = None
         self.last_pong_time = None
         self.addrinfo = []
@@ -139,6 +147,9 @@ def main():
         default=0.1)
     parser.add_argument(
         '--heartbeat-key', type=str, help='Redis key name to use for heartbeat',
+        default=None)
+    parser.add_argument(
+        '--password', type=str, help='Password',
         default=None)
     args = parser.parse_args()
     TestClient(args).run()
