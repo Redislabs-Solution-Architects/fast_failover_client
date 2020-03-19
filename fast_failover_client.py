@@ -36,13 +36,14 @@ class TestClient(object):
                               'PING\r\n'
             self.hb_expected_reply = '+PONG\r\n'
 
+        self.auth_command = None
         if args.password:
-            self.hb_command = '*2\r\n' \
-                              '$4\r\n' \
-                              'AUTH\r\n' \
-                              '$%d\r\n' \
-                              '%s\r\n' % (len(args.password), args.password) + self.hb_command
-            self.hb_expected_reply = '+OK\r\n' + self.hb_expected_reply
+            self.auth_command = '*2\r\n' \
+                                '$4\r\n' \
+                                'AUTH\r\n' \
+                                '$%d\r\n' \
+                                '%s\r\n' % (len(args.password), args.password)
+            self.auth_expected_reply = '+OK\r\n'
 
         self.sock = None
         self.last_pong_time = None
@@ -71,7 +72,7 @@ class TestClient(object):
                 self.resolve_addr()
             while len(self.addrinfo) > 0:
                 family, socktype, proto, canonname, sockaddr = self.addrinfo[0]
-                addr, port = sockaddr
+                addr, port = sockaddr[:2]
                 try:
                     self.sock = socket.create_connection(
                         (addr, port), timeout=self.connect_timeout)
@@ -112,9 +113,22 @@ class TestClient(object):
             self.last_pong_time = now
             time.sleep(self.heartbeat_interval)
 
+    def auth(self):
+        try:
+            self.sock.send(self.auth_command.encode())
+            response = self.sock.recv(512).decode()
+            if not response:
+                self.log_event('[E] Server connection dropped')
+            if response != self.auth_expected_reply:
+                self.log_event('[E] Unexpected protocol response: %s' % response)
+        except socket.error as err:
+            self.log_event('[E] AUTH %s' % err)
+
     def run(self):
         while True:
             self.connect()
+            if self.auth_command:
+                self.auth()
             self.heartbeat()
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
