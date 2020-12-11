@@ -12,6 +12,7 @@ Connect to a redis server, PING it repeatedly, and reconnect upon each disconnec
                                    [--heartbeat-interval HEARTBEAT_INTERVAL]
                                    [--heartbeat-key HEARTBEAT_KEY]
                                    [--password PASSWORD]
+                                   [--tls TLS]]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -29,9 +30,11 @@ Connect to a redis server, PING it repeatedly, and reconnect upon each disconnec
       --heartbeat-key HEARTBEAT_KEY
                             Redis key name to use for heartbeat (default: None)
       --password PASSWORD   Password (default: None)
+      --tls <boolean>       Use non-mutual TLS (default: False)
 
 What's New
 ---
 * python3 support
 * AUTH password support
 * ipv6 localhost resolution
+* Support for non-mutual TLS (w/SNI)

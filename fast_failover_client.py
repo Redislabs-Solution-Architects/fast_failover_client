@@ -9,6 +9,7 @@ Connect to a given redis server, PING it repeatedly and reconnect upon each disc
 import argparse
 import socket
 import time
+import ssl
 from datetime import datetime
 
 
@@ -48,6 +49,10 @@ class TestClient(object):
         self.sock = None
         self.last_pong_time = None
         self.addrinfo = []
+        self.sslcontext = None
+        self.ssock = None
+        if args.tls:
+            self.tls = True
 
     def log_event(self, text):
         print('[%s] %s' % (datetime.now().strftime('%d-%b-%g %H:%M:%S.%f',), text))
@@ -74,8 +79,18 @@ class TestClient(object):
                 family, socktype, proto, canonname, sockaddr = self.addrinfo[0]
                 addr, port = sockaddr[:2]
                 try:
-                    self.sock = socket.create_connection(
-                        (addr, port), timeout=self.connect_timeout)
+                    self.sock = socket.create_connection((addr, port), 
+                        timeout=self.connect_timeout)
+                    # currently only supports non-mutual TLS
+                    if self.tls:
+                        self.log_event('[I] Using non-mutual TLS')
+                        self.sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                        self.sslcontext.verify_mode = ssl.CERT_NONE 
+                        self.ssock = self.sslcontext.wrap_socket(
+                            self.sock, 
+                            server_hostname=self.host, # required for sni
+                            do_handshake_on_connect=True)
+
                     break
                 except socket.error as err:
                     self.log_event('[E] cannot connect to %s:%s (%s)' %
@@ -90,12 +105,21 @@ class TestClient(object):
             time.sleep(self.connect_retry_interval)
 
     def heartbeat(self):
-        self.sock.settimeout(self.heartbeat_socket_timeout)
+        if self.tls:
+            self.ssock.settimeout(self.heartbeat_socket_timeout)
+        else: 
+            self.sock.settimeout(self.heartbeat_socket_timeout)
+        
         responses = 0
         while True:
             try:
-                self.sock.send(self.hb_command.encode())
-                response = self.sock.recv(512).decode()
+                if self.tls:
+                    self.ssock.send(self.hb_command.encode())
+                    response = self.ssock.recv(512).decode()
+                else: 
+                    self.sock.send(self.hb_command.encode())
+                    response = self.sock.recv(512).decode()
+
                 if not response:
                     self.log_event('[E] Server connection dropped')
                     break
@@ -115,8 +139,12 @@ class TestClient(object):
 
     def auth(self):
         try:
-            self.sock.send(self.auth_command.encode())
-            response = self.sock.recv(512).decode()
+            if self.tls:
+                self.ssock.send(self.auth_command.encode())
+                response = self.ssock.recv(512).decode()
+            else: 
+                self.sock.send(self.auth_command.encode())
+                response = self.sock.recv(512).decode()
             if not response:
                 self.log_event('[E] Server connection dropped')
             if response != self.auth_expected_reply:
@@ -165,6 +193,9 @@ def main():
     parser.add_argument(
         '--password', type=str, help='Password',
         default=None)
+    parser.add_argument(
+        '--tls', type=bool, help='Use non-mutual TLS: example \"--tls True\"',
+        default=False)   
     args = parser.parse_args()
     TestClient(args).run()
 
