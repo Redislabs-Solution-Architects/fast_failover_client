@@ -18,26 +18,29 @@ spec:
               name: scripts-vol
           env:
             - name: REDIS_HOST
-              value: "db-raas-site-a.apps.bbokdoct.redisdemo.com"
+              # value: "db-raas-site-a.apps.bbokdoct.redisdemo.com"
+              value: "test.raas-site-a.svc.cluster.local"
             - name: REDIS_PASSWORD
               value: "password"
-            - name: REDIS_PORT
-              value: "443"
+              ## or get the value from a secret
               # valueFrom:
               #  secretKeyRef:
               #    name: test
               #    key: password
+            - name: REDIS_PORT
+              value: "17395"
             - name: HEARTBEAT_KEY
               value: "brad111"
-            # the following args are not yet supported
+            - name: USE_TLS
+              value: "true"
             # - name: HEARTBEAT_INTERVAL
-            #   value: brad
+            #   value: 0.1
             # - name: CONNECT_TIMEOUT
-            #   value: brad
+            #   value: 0.5
             # - name: CONNECT_RETRY_INTERVAL
-            #   value: brad
+            #   value: 0.1
             # - name: HEARTBEAT_SOCKET_TIMEOUT
-            #   value: brad
+            #   value: 0.3
           command:
             - /bin/bash
             - -c
@@ -45,5 +48,10 @@ spec:
               cd /tmp/scripts
               git clone https://github.com/Redislabs-Solution-Architects/fast_failover_client.git
               cd fast_failover_client
-              ls -al /tmp/scripts/fast_failover_client
-              python3 fast_failover_client.py --host $REDIS_HOST --port $REDIS_PORT --password $REDIS_PASSWORD --heartbeat-key $HEARTBEAT_KEY --tls true
+              # ls -al /tmp/scripts/fast_failover_client
+              python3 -u fast_failover_client.py `[[ "$USE_TLS" == "true" ]] && echo '--tls true '` --host $REDIS_HOST --port $REDIS_PORT --password $REDIS_PASSWORD --heartbeat-key $HEARTBEAT_KEY
+              ## append these above if you want to set them
+              #  --heartbeat-socket-timeout 0.3 \
+              #  --connect-timeout 0.5 \
+              #  --connect-retry-interval 0.1 \
+              #  --heartbeat-interval 0.1

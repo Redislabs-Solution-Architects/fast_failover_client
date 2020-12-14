@@ -30,11 +30,13 @@ class TestClient(object):
                               '$5\r\n' \
                               'value\r\n' % (len(args.heartbeat_key),
                                              args.heartbeat_key)
+            self.hb_key = args.heartbeat_key
             self.hb_expected_reply = '+OK\r\n'
         else:
             self.hb_command = '*1\r\n' \
                               '$4\r\n' \
                               'PING\r\n'
+            self.hb_key = ""
             self.hb_expected_reply = '+PONG\r\n'
 
         self.auth_command = None
@@ -45,17 +47,26 @@ class TestClient(object):
                                 '$%d\r\n' \
                                 '%s\r\n' % (len(args.password), args.password)
             self.auth_expected_reply = '+OK\r\n'
+            self.password = args.password
+        else:
+            self.password = ""
+
+        if args.tls:
+            self.tls = True
+        else: 
+            self.tls = False
 
         self.sock = None
         self.last_pong_time = None
         self.addrinfo = []
         self.sslcontext = None
         self.ssock = None
-        if args.tls:
-            self.tls = True
+        
+
+
 
     def log_event(self, text):
-        print('[%s] %s' % (datetime.now().strftime('%d-%b-%g %H:%M:%S.%f',), text))
+        print('[%s] %s' % (datetime.now().strftime('%d-%b-%g %H:%M:%S.%f',), text), flush=True)
 
     def resolve_addr(self):
         self.log_event('[I] Resolving %s' % self.host)
@@ -153,6 +164,15 @@ class TestClient(object):
             self.log_event('[E] AUTH %s' % err)
 
     def run(self):
+        self.log_event(
+            'Starting fast_failover_client.py with options:\n' +
+            'Host: {}\nPort: {}\nPassword: {}\nTLS: {}\n'
+            .format(self.host, self.port, self.password, self.tls) +
+            'HB key: {}\nHB interval: {}\nHB socket timout: {}\nRetry interval: {}\n'
+            .format(self.hb_key, self.heartbeat_interval, self.heartbeat_socket_timeout, 
+            self.connect_retry_interval) +
+            'Connect timeout: {}\n'
+            .format(self.connect_timeout))
         while True:
             self.connect()
             if self.auth_command:
