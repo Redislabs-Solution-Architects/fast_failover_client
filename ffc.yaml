@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fast-failover-client
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: scripts-vol
+          emptyDir: {}
+      containers:
+        - name: ffc
+          image: python:3.7.9-buster
+          volumeMounts:
+            - mountPath: /tmp/scripts
+              name: scripts-vol
+          env:
+            - name: REDIS_HOST
+              value: "db-raas-site-a.apps.bbokdoct.redisdemo.com"
+            - name: REDIS_PASSWORD
+              value: "password"
+            - name: REDIS_PORT
+              value: "443"
+              # valueFrom:
+              #  secretKeyRef:
+              #    name: test
+              #    key: password
+            - name: HEARTBEAT_KEY
+              value: "brad111"
+            # the following args are not yet supported
+            # - name: HEARTBEAT_INTERVAL
+            #   value: brad
+            # - name: CONNECT_TIMEOUT
+            #   value: brad
+            # - name: CONNECT_RETRY_INTERVAL
+            #   value: brad
+            # - name: HEARTBEAT_SOCKET_TIMEOUT
+            #   value: brad
+          command:
+            - /bin/bash
+            - -c
+            - |
+              cd /tmp/scripts
+              git clone https://github.com/Redislabs-Solution-Architects/fast_failover_client.git
+              cd fast_failover_client
+              ls -al /tmp/scripts/fast_failover_client
+              python3 fast_failover_client.py --host $REDIS_HOST --port $REDIS_PORT --password $REDIS_PASSWORD --heartbeat-key $HEARTBEAT_KEY --tls true
