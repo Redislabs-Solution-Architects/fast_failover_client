@@ -55,7 +55,7 @@ class TestClient(object):
             self.tls = True
 
     def log_event(self, text):
-        print('[%s] %s' % (datetime.now().strftime('%d-%b-%g %H:%M:%S.%f',), text))
+        print('[%s] %s' % (datetime.now().strftime('%d-%b-%g %H:%M:%S.%f',), text),flush=True)
 
     def resolve_addr(self):
         self.log_event('[I] Resolving %s' % self.host)
