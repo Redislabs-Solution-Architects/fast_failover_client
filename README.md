@@ -32,9 +32,17 @@ Connect to a redis server, PING it repeatedly, and reconnect upon each disconnec
       --password PASSWORD   Password (default: None)
       --tls <boolean>       Use non-mutual TLS (default: False)
 
+Use in Kubernetes
+---
+To run this in Kubernetes as a batch job:
+1. Modify `ffc.yaml` appropriately for your envionment (hostname, password, etc)
+2. Run `kubectl apply -f ffc.yaml` or equivalent `oc` command
+3. Delete the job after a successful test: `kubectl delete job.batch/fast-failover-client`
+
 What's New
 ---
 * python3 support
 * AUTH password support
 * ipv6 localhost resolution
 * Support for non-mutual TLS (w/SNI)
+* k8s support
