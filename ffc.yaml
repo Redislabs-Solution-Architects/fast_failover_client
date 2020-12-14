@@ -46,9 +46,9 @@ spec:
             - -c
             - |
               cd /tmp/scripts
-              git clone -b k8slogs https://github.com/Redislabs-Solution-Architects/fast_failover_client.git
+              git clone https://github.com/Redislabs-Solution-Architects/fast_failover_client.git
               cd fast_failover_client
-              ls -al /tmp/scripts/fast_failover_client
+              # ls -al /tmp/scripts/fast_failover_client
               python3 -u fast_failover_client.py `[[ "$USE_TLS" == "true" ]] && echo '--tls true '` --host $REDIS_HOST --port $REDIS_PORT --password $REDIS_PASSWORD --heartbeat-key $HEARTBEAT_KEY
               ## append these above if you want to set them
               #  --heartbeat-socket-timeout 0.3 \
